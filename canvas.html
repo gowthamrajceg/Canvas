@@ -8,7 +8,7 @@
 </head>
 
 <body>
-    <canvas id="example" width="2000" height="800">
+    <canvas id="example" width="4000" height="800">
     </canvas>
 </body>
 
@@ -16,7 +16,6 @@
      var canvas = document.getElementById("example");
     var context = canvas.getContext("2d");
     var centerX = (canvas.width/4),centerY=(canvas.height/2);
-
     var radius = 3;
     var movementDistance=2;
     var degree = 0;
@@ -24,16 +23,29 @@
    var particles = {},
     particleIndex = 0,
     settings = {
-      maxLife: 360,
-      density: 20
+      maxLife: 800
     };
+    var particlesOpposite ={},
+        particleIndexOpposite = 0,
+        settingsOpposite={
+          maxLife:  800
+        };
 
     function Particle() {
-    this.particleRadius = Math.floor(Math.random() * Math.floor(6));
+    /*this.particleRadius = Math.floor(Math.random() * Math.floor(6));
     if(this.particleRadius === 0 || this.particleRadius === 1)
     {
         this.particleRadius = 2;
+    }*/
+    if(particleIndex%3 === 0)
+    {
+      this.fillStyle = "white";
     }
+    else
+    {
+      this.fillStyle = "transparent";
+    }
+    this.particleRadius = 2.5;
     this.centerX = centerX;
     this.centerY = centerY;
   this.posX = 0;
@@ -43,6 +55,7 @@
   this.movementDistance = 1;
   this.degree = 0;
   this.radius = radius;
+  this.lifetime = true;
  
   this.findPointOnCurve = function(posX){
             var x = posX*posX;
@@ -54,34 +67,71 @@
   particleIndex ++;
 
 }
+function oppositeParticle() {
+    /*this.particleRadius = Math.floor(Math.random() * Math.floor(6));
+    if(this.particleRadius === 0 || this.particleRadius === 1)
+    {
+        this.particleRadius = 2;
+    }*/
+    if(particleIndexOpposite%3 === 0)
+    {
+      this.fillStyle = "red";
+    }
+    else
+    {
+      this.fillStyle = "transparent";
+    }
+    this.particleRadius = 2.5;
+    this.centerX = centerX;
+    this.centerY = centerY;
+  this.posX = 0;
+  this.posY = 0;
+  this.id = particleIndexOpposite;
+  this.life = 0;
+  this.movementDistance = -1;
+  this.degree = 180;
+  this.radius = radius;
+  this.lifetime = true;
  
-Particle.prototype.draw = function() {
+  this.findPointOnCurve = function(posX){
+            var x = posX*posX;
+            var value = (this.radius*this.radius)-x;
+            var y = Math.sqrt(value);
+            return y;
+    }
+  particlesOpposite[particleIndexOpposite] = this;
+  particleIndexOpposite ++;
+
+}
+ 
+oppositeParticle.prototype.drawOpposite = function() {
   this.posX += this.movementDistance;
   this.posY = this.findPointOnCurve(this.posX);
 
   this.life++;
   
     if (this.life >= settings.maxLife) {
-        delete particles[this.id];
+        this.lifetime = false;
+        delete particlesOpposite[this.id];
     }
 
- if(this.centerY+this.posY >= this.centerY && this.degree === 0 )
+ if(this.lifetime && this.centerY+this.posY >= this.centerY && this.degree === 0 )
   {
     context.beginPath();
-    context.fillStyle = "yellow";
+    context.fillStyle = this.fillStyle;
     context.arc(this.centerX+this.posX,this.centerY+this.posY,this.particleRadius,0,Math.PI*2,true);
     context.closePath();
     context.fill();
     if(this.centerY+this.posY === this.centerY)
     {
         this.degree = 90;
-        this.movementDistance = -1;
+        this.movementDistance = -0.5;
     }
   }
-  else if(this.centerX+this.posX >= this.centerX && this.degree === 90)
+  else if(this.lifetime && this.centerX+this.posX >= this.centerX && this.degree === 90)
   {
     context.beginPath();
-    context.fillStyle = "yellow";
+    context.fillStyle = this.fillStyle;
     context.arc(this.centerX+this.posX,this.centerY-this.posY,this.particleRadius,0,Math.PI*2,true);
     context.closePath();
     context.fill();
@@ -90,26 +140,26 @@ Particle.prototype.draw = function() {
         this.centerY = this.centerY + this.radius;
         this.radius=this.radius*2;
         this.degree = 180;
-        this.movementDistance = -1;
+        this.movementDistance = -0.5;
     }
   }
-  else if(this.centerY-this.posY <= this.centerY && this.degree === 180)
+  else if(this.lifetime && this.centerY-this.posY <= this.centerY && this.degree === 180)
   {
     context.beginPath();
-    context.fillStyle = "yellow";
+    context.fillStyle = this.fillStyle;
     context.arc(this.centerX+this.posX,this.centerY-this.posY,this.particleRadius,0,Math.PI*2,true);
     context.closePath();
     context.fill();
     if(this.centerY-this.posY === this.centerY)
     {
         this.degree = 270;
-        this.movementDistance = 1;
+        this.movementDistance = 0.5;
     }
   }
-  else if(this.centerX+this.posX <=this.centerX && this.degree === 270)
+  else if(this.lifetime && this.centerX+this.posX <=this.centerX && this.degree === 270)
   {
     context.beginPath();
-    context.fillStyle = "yellow";
+    context.fillStyle = this.fillStyle;
     context.arc(this.centerX+this.posX,this.centerY+this.posY,this.particleRadius,0,Math.PI*2,true);
     context.closePath();
     context.fill();
@@ -118,7 +168,77 @@ Particle.prototype.draw = function() {
         this.centerY = this.centerY - this.radius;
         this.radius=this.radius*2;
         this.degree = 0;
-        this.movementDistance = 1;
+        this.movementDistance = 0.5;
+        
+    }
+  }
+}
+Particle.prototype.draw = function() {
+  this.posX += this.movementDistance;
+  this.posY = this.findPointOnCurve(this.posX);
+
+  this.life++;
+  
+    if (this.life >= settings.maxLife) {
+        this.lifetime = false;
+        delete particles[this.id];
+    }
+
+ if(this.lifetime && this.centerY+this.posY >= this.centerY && this.degree === 0 )
+  {
+    context.beginPath();
+    context.fillStyle = this.fillStyle;
+    context.arc(this.centerX+this.posX,this.centerY+this.posY,this.particleRadius,0,Math.PI*2,true);
+    context.closePath();
+    context.fill();
+    if(this.centerY+this.posY === this.centerY)
+    {
+        this.degree = 90;
+        this.movementDistance = -0.5;
+    }
+  }
+  else if(this.lifetime && this.centerX+this.posX >= this.centerX && this.degree === 90)
+  {
+    context.beginPath();
+    context.fillStyle = this.fillStyle;
+    context.arc(this.centerX+this.posX,this.centerY-this.posY,this.particleRadius,0,Math.PI*2,true);
+    context.closePath();
+    context.fill();
+    if(this.centerX+this.posX === this.centerX)
+    {
+        this.centerY = this.centerY + this.radius;
+        this.radius=this.radius*2;
+        this.degree = 180;
+        this.movementDistance = -0.5;
+    }
+  }
+  else if(this.lifetime && this.centerY-this.posY <= this.centerY && this.degree === 180)
+  {
+    context.beginPath();
+    context.fillStyle = this.fillStyle;
+    context.arc(this.centerX+this.posX,this.centerY-this.posY,this.particleRadius,0,Math.PI*2,true);
+    context.closePath();
+    context.fill();
+    if(this.centerY-this.posY === this.centerY)
+    {
+        this.degree = 270;
+        this.movementDistance = 0.5;
+    }
+  }
+  else if(this.lifetime && this.centerX+this.posX <=this.centerX && this.degree === 270)
+  {
+    context.beginPath();
+    context.fillStyle = this.fillStyle;
+    context.arc(this.centerX+this.posX,this.centerY+this.posY,this.particleRadius,0,Math.PI*2,true);
+    context.closePath();
+    context.fill();
+    if(this.centerX+this.posX === this.centerX)
+    {
+        this.centerY = this.centerY - this.radius;
+        this.radius=this.radius*2;
+        this.degree = 0;
+        this.movementDistance = 0.5;
+        
     }
   }
 }
@@ -132,13 +252,15 @@ Particle.prototype.draw = function() {
         
           if (Math.random() > 0.7) {
             new Particle();
+            new oppositeParticle();
           }
 
         for(var i in particles)
         {
         particles[i].draw();
+        particlesOpposite[i].drawOpposite();
         }
-}, 5);
+}, 1);
 
 </script>
 </html>
